@@ -52,7 +52,7 @@
     textarea{min-height:86px;resize:vertical;line-height:1.4}
     input:focus,select:focus,textarea:focus{outline:3px solid rgba(233,168,70,.35);border-color:var(--gold)}
     .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-    .filters{display:grid;grid-template-columns:minmax(220px,1fr) 160px 160px 160px 150px 150px;gap:10px;margin-bottom:12px}
+    .filters{display:grid;grid-template-columns:minmax(220px,1fr) 190px 150px 160px 160px 150px 150px;gap:10px;margin-bottom:12px}.multi-filter{position:relative}.multi-btn{width:100%;min-height:42px;background:#fff;color:var(--text);border:1px solid var(--border);font-weight:800;text-align:left;display:flex;justify-content:space-between;align-items:center}.multi-panel{position:absolute;z-index:8;top:48px;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 18px 42px rgba(17,24,39,.16);padding:10px;display:grid;gap:7px;max-height:320px;overflow:auto}.multi-panel label{display:flex;gap:8px;align-items:center;font-size:13px;font-weight:700}.customer-link{border:0;background:transparent;color:var(--blue);font-weight:900;cursor:pointer;padding:0;text-align:left;text-decoration:underline;text-underline-offset:2px}
     .bulkbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:12px;background:var(--soft);border:1px solid var(--border);border-radius:18px}
     .bulkbar select{width:auto;min-width:180px}
     .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:18px;background:#fff}
@@ -77,7 +77,7 @@
     <section class="login-card">
       <div class="logo">CC</div>
       <h1>Grading Tracker</h1>
-      <p class="small">Interner Zugriff für Grading-Submissions und SLAP-CSV-Exporte.</p>
+      <p class="small">Interner Zugriff für Grading-Submissions und CSV-Exporte.</p>
       <div class="field" style="margin-top:16px"><label for="pinInput">PIN</label><input id="pinInput" type="password" inputmode="numeric" placeholder="PIN eingeben"></div>
       <div class="btn-row"><button class="primary" id="loginBtn" type="button">Entsperren</button></div>
     </section>
@@ -87,10 +87,11 @@
     <section class="hero">
       <div>
         <h1>Grading Tracker</h1>
-        <p>Karten erfassen, Status pflegen, Submissionnummern dokumentieren und CSV-Dateien für SLAP nach Kategorie exportieren.</p>
+        <p>Karten erfassen, Status pflegen, Submissionnummern dokumentieren und CSV-Dateien nach Service exportieren.</p>
         <span class="badge"><span class="dot"></span><span id="syncStatus">Firebase wird verbunden...</span></span>
       </div>
       <div class="hero-actions">
+        <button class="primary" id="newSubmissionBtn" type="button">Neue Submission</button>
         <button class="secondary" id="importBtn" type="button">XLSX importieren</button>
         <button class="secondary" id="exportBackupBtn" type="button">Backup CSV</button>
         <button class="secondary" id="lockBtn" type="button">Sperren</button>
@@ -101,7 +102,7 @@
       <div class="kpi"><span>Gesamt</span><strong id="kpiTotal">0</strong></div>
       <div class="kpi"><span>Inventarisiert</span><strong id="kpiInventoried">0</strong></div>
       <div class="kpi"><span>Versendet</span><strong id="kpiSent">0</strong></div>
-      <div class="kpi"><span>Bei PSA/SLAP</span><strong id="kpiInGrading">0</strong></div>
+      <div class="kpi"><span>Bei PSA/Submission</span><strong id="kpiInGrading">0</strong></div>
       <div class="kpi"><span>Zurück</span><strong id="kpiReturned">0</strong></div>
       <div class="kpi"><span>Abgeschlossen</span><strong id="kpiDone">0</strong></div>
       <div class="kpi"><span>Auswahl</span><strong id="kpiSelected">0</strong></div>
@@ -122,10 +123,11 @@
             <div class="field"><label>Card Number</label><input data-field="cardNumber"></div>
             <div class="field"><label>Card Surface</label><select data-field="cardSurface"><option>Holofoil</option><option>Non-Holo</option><option>Foil</option><option>Other</option></select></div>
             <div class="field"><label>Status</label><select data-field="status" id="statusSelect"></select></div>
-            <div class="field"><label>Kategorie</label><select data-field="category" id="categorySelect"></select></div>
+            <div class="field"><label>Service</label><select data-field="category" id="categorySelect"></select></div>
             <div class="field"><label>Submission Date</label><input data-field="submissionDate" type="date"></div>
             <div class="field"><label>Grade</label><input data-field="grade"></div>
             <div class="field"><label>Kundenname</label><input data-field="customerName"></div>
+            <div class="field"><label>Kunden-E-Mail</label><input data-field="customerEmail" type="email"></div>
             <div class="field"><label>Bestellung</label><input data-field="orderNo"></div>
             <div class="field"><label>Submission#</label><input data-field="submissionNo"></div>
             <div class="field full"><label>Notiz</label><textarea data-field="note"></textarea></div>
@@ -143,8 +145,12 @@
 
         <div class="filters">
           <input id="searchInput" placeholder="Suche nach Karte, Kunde, Bestellung...">
-          <select id="statusFilter"><option value="">Alle Status</option></select>
-          <select id="categoryFilter"><option value="">Alle Kategorien</option></select>
+          <div class="multi-filter">
+            <button class="multi-btn" id="statusMultiBtn" type="button"><span id="statusMultiText">Status wählen</span><span>▾</span></button>
+            <div class="multi-panel hidden" id="statusMultiPanel"></div>
+          </div>
+          <select id="statusMode"><option value="include">Status anzeigen</option><option value="exclude">Status ausblenden</option></select>
+          <select id="categoryFilter"><option value="">Alle Services</option></select>
           <select id="customerFilter"><option value="">Alle Kunden</option></select>
           <select id="sortSelect"><option value="numberAsc"># aufsteigend</option><option value="dateDesc">Datum neu</option><option value="nameAsc">Karte A-Z</option><option value="customerAsc">Kunde A-Z</option></select>
           <button class="secondary" id="clearFiltersBtn" type="button">Filter leeren</button>
@@ -159,11 +165,11 @@
         </div>
 
         <div class="bulkbar">
-          <strong>SLAP-Export</strong>
+          <strong>CSV-Export</strong>
           <select id="exportCategory"></select>
           <select id="exportStatus"></select>
-          <button class="primary" id="slapExportBtn" type="button">CSV für SLAP exportieren</button>
-          <span class="small">Exportiert exakt: Year, Brand/Game/Producer, Language, Character/Card Name, Set Name, Card Number, Card Surface</span>
+          <button class="primary" id="slapExportBtn" type="button">CSV exportieren</button>
+          <span class="small">Exportiert exakt die benötigten Spalten für den jeweiligen Submission-Service.</span>
         </div>
 
         <div class="table-wrap">
@@ -179,7 +185,7 @@
                 <th>Sprache</th>
                 <th>Surface</th>
                 <th>Status</th>
-                <th>Kategorie</th>
+                <th>Service</th>
                 <th>Kunde</th>
                 <th>Bestellung</th>
                 <th>Submission#</th>
@@ -193,6 +199,31 @@
       </section>
     </section>
   </main>
+
+
+  <div class="modal-backdrop hidden" id="submissionModal">
+    <section class="modal">
+      <h2>Neue Submission anlegen</h2>
+      <p class="small">Lege schnell leere Kartenzeilen an, sobald ein Kunde z. B. 5x PSA Value gebucht hat. Die Karteninfos kannst du später ergänzen, sobald die Karten da sind.</p>
+
+      <div class="form-grid" style="margin-top:14px;">
+        <div class="field"><label>Kundenname</label><input id="subCustomerName" placeholder="Max Mustermann"></div>
+        <div class="field"><label>E-Mail optional</label><input id="subCustomerEmail" type="email" placeholder="kunde@mail.de"></div>
+        <div class="field"><label>Bestellung</label><input id="subOrderNo" placeholder="Bestellnummer"></div>
+        <div class="field"><label>Submission Date optional</label><input id="subDate" type="date"></div>
+        <div class="field"><label>Service</label><select id="subCategory"></select></div>
+        <div class="field"><label>Anzahl Karten</label><input id="subCount" type="number" min="1" max="500" step="1" value="1"></div>
+        <div class="field"><label>TCG</label><input id="subTcg" value="Pokemon"></div>
+        <div class="field"><label>Sprache Default</label><select id="subLanguage"><option value="">Offen</option><option>German</option><option>English</option><option>Japanese</option><option>Chinese</option><option>Korean</option><option>Other</option></select></div>
+        <div class="field full"><label>Notiz optional</label><textarea id="subNote" placeholder="z. B. Kunde bringt Karten beim Stream mit"></textarea></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="primary" id="createSubmissionBtn" type="button">Leere Kartenzeilen anlegen</button>
+        <button class="secondary" id="closeSubmissionBtn" type="button">Schließen</button>
+      </div>
+    </section>
+  </div>
 
   <div class="modal-backdrop hidden" id="importModal">
     <section class="modal">
@@ -218,6 +249,7 @@
 
     const PIN = "2212";
     const PATH = "gradingTracker/cards";
+    const SUBMISSION_PATH = "gradingTracker/submissions";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA5kq-HiCkVroQLCwwVc24C8XYPJTZvegM",
@@ -237,9 +269,9 @@
     const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
     const els = {
       login:$("#loginScreen"), pin:$("#pinInput"), loginBtn:$("#loginBtn"), app:$("#app"), sync:$("#syncStatus"), lock:$("#lockBtn"),
-      importBtn:$("#importBtn"), importModal:$("#importModal"), closeImport:$("#closeImportBtn"), startImport:$("#startImportBtn"), xlsxInput:$("#xlsxInput"),
+      newSubmissionBtn:$("#newSubmissionBtn"), submissionModal:$("#submissionModal"), closeSubmission:$("#closeSubmissionBtn"), createSubmission:$("#createSubmissionBtn"), subCustomerName:$("#subCustomerName"), subCustomerEmail:$("#subCustomerEmail"), subOrderNo:$("#subOrderNo"), subDate:$("#subDate"), subCategory:$("#subCategory"), subCount:$("#subCount"), subTcg:$("#subTcg"), subLanguage:$("#subLanguage"), subNote:$("#subNote"), importBtn:$("#importBtn"), importModal:$("#importModal"), closeImport:$("#closeImportBtn"), startImport:$("#startImportBtn"), xlsxInput:$("#xlsxInput"),
       form:$("#cardForm"), cardId:$("#cardId"), save:$("#saveBtn"), newBtn:$("#newBtn"), del:$("#deleteBtn"),
-      search:$("#searchInput"), statusFilter:$("#statusFilter"), categoryFilter:$("#categoryFilter"), customerFilter:$("#customerFilter"), sort:$("#sortSelect"), clearFilters:$("#clearFiltersBtn"),
+      search:$("#searchInput"), statusMode:$("#statusMode"), statusMultiBtn:$("#statusMultiBtn"), statusMultiText:$("#statusMultiText"), statusMultiPanel:$("#statusMultiPanel"), categoryFilter:$("#categoryFilter"), customerFilter:$("#customerFilter"), sort:$("#sortSelect"), clearFilters:$("#clearFiltersBtn"),
       body:$("#cardsBody"), selectAll:$("#selectAll"), selectedText:$("#selectedText"), bulkStatus:$("#bulkStatus"), bulkStatusBtn:$("#bulkStatusBtn"), bulkSubmissionNo:$("#bulkSubmissionNo"), bulkSubmissionBtn:$("#bulkSubmissionBtn"),
       exportCategory:$("#exportCategory"), exportStatus:$("#exportStatus"), slapExport:$("#slapExportBtn"), exportBackup:$("#exportBackupBtn"),
       toast:$("#toast"),
@@ -249,6 +281,8 @@
     let db;
     let cards = {};
     let selected = new Set();
+    let selectedStatuses = new Set();
+    let currentCustomerView = "";
 
     init();
 
@@ -265,14 +299,19 @@
       els.newBtn.addEventListener("click", resetForm);
       els.del.addEventListener("click", deleteCard);
 
-      [els.search, els.statusFilter, els.categoryFilter, els.customerFilter, els.sort].forEach(el => el.addEventListener("input", render));
+      [els.search, els.statusMode, els.categoryFilter, els.customerFilter, els.sort].forEach(el => el.addEventListener("input", render));
+      els.statusMultiBtn.addEventListener("click", () => els.statusMultiPanel.classList.toggle("hidden"));
+      document.addEventListener("click", (event) => { if(!event.target.closest(".multi-filter")) els.statusMultiPanel.classList.add("hidden"); });
 
       els.clearFilters.addEventListener("click", () => {
         els.search.value = "";
-        els.statusFilter.value = "";
+        selectedStatuses.clear();
+        currentCustomerView = "";
+        els.statusMode.value = "include";
         els.categoryFilter.value = "";
         els.customerFilter.value = "";
         els.sort.value = "numberAsc";
+        renderStatusMulti();
         render();
       });
 
@@ -282,6 +321,9 @@
       els.slapExport.addEventListener("click", exportSlapCsv);
       els.exportBackup.addEventListener("click", exportBackupCsv);
 
+      els.newSubmissionBtn.addEventListener("click", openNewSubmissionModal);
+      els.closeSubmission.addEventListener("click", () => els.submissionModal.classList.add("hidden"));
+      els.createSubmission.addEventListener("click", createNewSubmissionRows);
       els.importBtn.addEventListener("click", () => els.importModal.classList.remove("hidden"));
       els.closeImport.addEventListener("click", () => els.importModal.classList.add("hidden"));
       els.startImport.addEventListener("click", importXlsx);
@@ -294,14 +336,116 @@
       $("#statusSelect").innerHTML = statusOptions;
       $("#categorySelect").innerHTML = categoryOptions;
       els.statusFilter.innerHTML = '<option value="">Alle Status</option>' + statusOptions;
-      els.categoryFilter.innerHTML = '<option value="">Alle Kategorien</option>' + categoryOptions;
+      els.categoryFilter.innerHTML = '<option value="">Alle Servicen</option>' + categoryOptions;
       els.bulkStatus.innerHTML = statusOptions;
       els.exportStatus.innerHTML = statusOptions;
       els.exportStatus.value = "Inventarisiert";
       els.exportCategory.innerHTML = categoryOptions;
+      els.subCategory.innerHTML = categoryOptions;
     }
 
-    function checkPin(){
+    
+    function renderStatusMulti(){
+      els.statusMultiPanel.innerHTML = STATUSES.map(status => `
+        <label>
+          <input type="checkbox" value="${esc(status)}" ${selectedStatuses.has(status) ? "checked" : ""}>
+          <span>${esc(status)}</span>
+        </label>
+      `).join("");
+
+      $$("input[type='checkbox']", els.statusMultiPanel).forEach(input => {
+        input.addEventListener("change", () => {
+          if(input.checked) selectedStatuses.add(input.value);
+          else selectedStatuses.delete(input.value);
+          updateStatusMultiText();
+          render();
+        });
+      });
+
+      updateStatusMultiText();
+    }
+
+    function updateStatusMultiText(){
+      if(!selectedStatuses.size){
+        els.statusMultiText.textContent = "Alle Status";
+      }else if(selectedStatuses.size === 1){
+        els.statusMultiText.textContent = [...selectedStatuses][0];
+      }else{
+        els.statusMultiText.textContent = selectedStatuses.size + " Status gewählt";
+      }
+    }
+
+    function openNewSubmissionModal(){
+      els.submissionModal.classList.remove("hidden");
+      els.subCount.value = "1";
+      els.subCategory.value = "Value";
+      els.subTcg.value = "Pokemon";
+      els.subLanguage.value = "";
+      els.subCustomerName.focus();
+    }
+
+    async function createNewSubmissionRows(){
+      if(!db){ showToast("Firebase noch nicht verbunden"); return; }
+
+      const count = intVal(els.subCount.value);
+      const customerName = els.subCustomerName.value.trim();
+      const customerEmail = els.subCustomerEmail.value.trim();
+      const orderNo = els.subOrderNo.value.trim();
+      const category = els.subCategory.value;
+      const submissionDate = els.subDate.value;
+      const tcg = els.subTcg.value.trim() || "Pokemon";
+      const language = els.subLanguage.value;
+      const note = els.subNote.value.trim();
+
+      if(!customerName){ showToast("Kundenname fehlt"); els.subCustomerName.focus(); return; }
+      if(!count || count < 1){ showToast("Anzahl fehlt"); els.subCount.focus(); return; }
+
+      const currentMax = cardArray().reduce((max, card) => Math.max(max, intVal(card.number)), 0);
+
+      try{
+        const tasks = [];
+        for(let i = 0; i < count; i++){
+          const newRef = push(ref(db, PATH));
+          const card = {
+            number: String(currentMax + i + 1),
+            year: "",
+            tcg,
+            language,
+            cardName: "",
+            setName: "",
+            cardNumber: "",
+            cardSurface: "Holofoil",
+            status: "Lieferung ausstehend",
+            submissionDate,
+            customerName,
+            customerEmail,
+            category,
+            grade: "",
+            orderNo,
+            submissionNo: "",
+            note,
+            createdBySubmissionTool: "Ja",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          tasks.push(set(newRef, card));
+        }
+
+        await Promise.all(tasks);
+        els.submissionModal.classList.add("hidden");
+        els.subCustomerName.value = "";
+        els.subCustomerEmail.value = "";
+        els.subOrderNo.value = "";
+        els.subDate.value = "";
+        els.subNote.value = "";
+        showToast(count + " Kartenzeilen angelegt");
+      }catch(err){
+        console.error(err);
+        showToast("Submission konnte nicht angelegt werden");
+      }
+    }
+
+function checkPin(){
       if(els.pin.value === PIN){
         localStorage.setItem("ccGradingTrackerUnlocked", "yes");
         unlock();
@@ -421,12 +565,14 @@
     function filteredCards(){
       let arr = cardArray();
       const q = norm(els.search.value);
-      const status = els.statusFilter.value;
+      const statusMode = els.statusMode.value;
       const category = els.categoryFilter.value;
-      const customer = els.customerFilter.value;
+      const customer = els.customerFilter.value || currentCustomerView;
 
       if(q) arr = arr.filter(c => norm(Object.values(c).join(" ")).includes(q));
-      if(status) arr = arr.filter(c => c.status === status);
+      if(selectedStatuses.size){
+        arr = arr.filter(c => statusMode === "exclude" ? !selectedStatuses.has(c.status) : selectedStatuses.has(c.status));
+      }
       if(category) arr = arr.filter(c => c.category === category);
       if(customer) arr = arr.filter(c => c.customerName === customer);
 
@@ -461,7 +607,7 @@
           <td>${esc(card.cardSurface || "")}</td>
           <td><span class="status-pill ${statusClass(card.status)}">${esc(card.status || "")}</span></td>
           <td>${esc(card.category || "")}</td>
-          <td>${esc(card.customerName || "")}</td>
+          <td>${card.customerName ? `<button class="customer-link" data-customer="${esc(card.customerName)}">${esc(card.customerName)}</button>` : ""}</td>
           <td>${esc(card.orderNo || "")}</td>
           <td>${esc(card.submissionNo || "")}</td>
           <td>${esc(card.grade || "")}</td>
@@ -483,6 +629,16 @@
           copy.number = "";
           setForm(copy);
         });
+
+        const customerBtn = tr.querySelector("[data-customer]");
+        if(customerBtn){
+          customerBtn.addEventListener("click", () => {
+            currentCustomerView = customerBtn.dataset.customer;
+            els.customerFilter.value = currentCustomerView;
+            render();
+            showToast("Kunde gefiltert");
+          });
+        }
 
         els.body.appendChild(tr);
       });
@@ -574,11 +730,11 @@
         ]);
       });
 
-      downloadCsv(csvRows, `SLAP_${category}_${status}_${dateStamp()}.csv`);
+      downloadCsv(csvRows, `Submission_${category}_${status}_${dateStamp()}.csv`);
     }
 
     function exportBackupCsv(){
-      const headers = ["#","Year","Brand/Game/Producer","Language","Character/Card Name","Set Name","Card Number","Card Surface","Status","Submission Date","Name","Category","Grade","Bestellung","Submission#","Notiz"];
+      const headers = ["#","Year","Brand/Game/Producer","Language","Character/Card Name","Set Name","Card Number","Card Surface","Status","Submission Date","Name","E-Mail","Service","Grade","Bestellung","Submission#","Notiz"];
       const rows = [headers];
 
       cardArray().forEach(card => rows.push([
@@ -593,6 +749,7 @@
         card.status || "",
         card.submissionDate || "",
         card.customerName || "",
+        card.customerEmail || "",
         card.category || "",
         card.grade || "",
         card.orderNo || "",
@@ -643,7 +800,8 @@
               status: String(row["Status"] || "Inventarisiert").trim(),
               submissionDate: excelDateToIso(row["Submission Date"]),
               customerName: String(row["Name"] || "").trim(),
-              category: String(row["Category"] || "Value").trim(),
+              customerEmail: String(row["E-Mail"] || row["Email"] || "").trim(),
+              category: String(row["Category"] || row["Service"] || "Value").trim(),
               grade: String(row["Grade"] || "").replace(/\.0$/,"").trim(),
               orderNo: String(row["Bestellung"] || "").replace(/\.0$/,"").trim(),
               submissionNo: String(row["Submission#"] || "").replace(/\.0$/,"").trim(),
