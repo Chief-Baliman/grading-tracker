@@ -44,7 +44,7 @@
     .dash{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;margin-top:18px}
     .kpi{background:#fff;border:1px solid var(--border);border-radius:18px;padding:15px;box-shadow:0 10px 26px rgba(17,24,39,.05)}
     .kpi span{display:block;color:var(--muted);font-size:12px;font-weight:850;margin-bottom:5px}.kpi strong{display:block;color:var(--blue);font-size:24px;font-weight:950;line-height:1}
-    .tools{display:grid;grid-template-columns:420px minmax(0,1fr);gap:18px;align-items:start;margin-top:18px}
+    .tools{display:grid;grid-template-columns:420px minmax(0,1fr);gap:18px;align-items:start;margin-top:18px}.tools>aside.card{position:sticky;top:14px;max-height:calc(100vh - 28px);overflow:auto}
     .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
     .field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}
     label{font-weight:850;font-size:13px;color:var(--text)}
@@ -68,7 +68,7 @@
     .modal{width:min(820px,100%);max-height:92vh;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:22px;padding:18px;box-shadow:0 24px 80px rgba(0,0,0,.3)}
     .import-box{border:1px dashed var(--border);background:var(--soft);border-radius:18px;padding:16px;margin-top:10px}
     .toast{position:fixed;right:18px;bottom:18px;padding:12px 14px;background:#111827;color:#fff;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.22);font-size:14px;opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:50}.toast.show{opacity:1;transform:translateY(0)}
-    @media(max-width:1250px){.dash{grid-template-columns:repeat(4,1fr)}.tools{grid-template-columns:1fr}.filters{grid-template-columns:1.3fr 1fr 1fr 1fr}}
+    @media(max-width:1250px){.dash{grid-template-columns:repeat(4,1fr)}.tools{grid-template-columns:1fr}.tools>aside.card{position:static;max-height:none;overflow:visible}.filters{grid-template-columns:1.3fr 1fr 1fr 1fr}}
     @media(max-width:700px){.wrap{width:min(100% - 18px,1680px);padding-top:10px}.hero,.card,.login-card,.modal{border-radius:18px;padding:16px}.hero{flex-direction:column}.hero-actions,.hero-actions button{width:100%}.dash,.form-grid,.filters{grid-template-columns:1fr}.btn-row button{width:100%}.bulkbar select,.bulkbar button{width:100%}}
   </style>
 </head>
@@ -549,13 +549,14 @@ function checkPin(){
       $$("[data-field]", els.form).forEach(field => {
         const value = card[field.dataset.field];
         if(value !== undefined && value !== null){
-          if(field.tagName === "SELECT" && value && !Array.from(field.options).some(o => o.value === String(value))){
+          const finalValue = field.dataset.field === "cardNumber" ? cleanCardNumber(value) : value;
+          if(field.tagName === "SELECT" && finalValue && !Array.from(field.options).some(o => o.value === String(finalValue))){
             const opt = document.createElement("option");
-            opt.value = String(value);
-            opt.textContent = String(value);
+            opt.value = String(finalValue);
+            opt.textContent = String(finalValue);
             field.appendChild(opt);
           }
-          field.value = value;
+          field.value = finalValue;
         }
       });
       els.cardId.value = card.id || "";
@@ -659,7 +660,7 @@ function checkPin(){
           <td>${esc(card.number || "")}</td>
           <td><strong>${esc(card.cardName || "")}</strong></td>
           <td>${esc(card.setName || "")}</td>
-          <td>${esc(card.cardNumber || "")}</td>
+          <td>${esc(cleanCardNumber(card.cardNumber))}</td>
           <td>${esc(card.tcg || "")}</td>
           <td>${esc(card.language || "")}</td>
           <td>${esc(card.cardSurface || "")}</td>
@@ -669,7 +670,7 @@ function checkPin(){
           <td>${esc(card.orderNo || "")}</td>
           <td>${esc(card.submissionNo || "")}</td>
           <td>${esc(card.grade || "")}</td>
-          <td><div class="row-actions"><button class="mini blue" data-edit>Bearbeiten</button><button class="mini secondary" data-dup>Duplizieren</button></div></td>
+          <td><div class="row-actions"><button class="mini blue" data-edit>Bearbeiten</button></div></td>
         `;
 
         const checkbox = tr.querySelector("input[type='checkbox']");
@@ -681,12 +682,6 @@ function checkPin(){
         });
 
         tr.querySelector("[data-edit]").addEventListener("click", () => setForm(card));
-        tr.querySelector("[data-dup]").addEventListener("click", () => {
-          const copy = {...card};
-          delete copy.id;
-          copy.number = "";
-          setForm(copy);
-        });
 
         const customerBtn = tr.querySelector("[data-customer]");
         if(customerBtn){
@@ -789,7 +784,7 @@ function checkPin(){
           card.language || "",
           card.cardName || "",
           card.setName || "",
-          card.cardNumber || "",
+          cleanCardNumber(card.cardNumber),
           card.cardSurface || ""
         ]);
       });
@@ -808,7 +803,7 @@ function checkPin(){
         card.language || "",
         card.cardName || "",
         card.setName || "",
-        card.cardNumber || "",
+        cleanCardNumber(card.cardNumber),
         card.cardSurface || "",
         card.status || "",
         card.submissionDate || "",
@@ -845,10 +840,10 @@ function checkPin(){
       reader.onload = async function(event){
         try{
           const data = new Uint8Array(event.target.result);
-          const workbook = XLSX.read(data, { type:"array", cellDates:true });
+          const workbook = XLSX.read(data, { type:"array", cellDates:false });
           const sheetName = workbook.SheetNames.includes("Vorbereitung Submission") ? "Vorbereitung Submission" : workbook.SheetNames[0];
           const sheet = workbook.Sheets[sheetName];
-          const rows = XLSX.utils.sheet_to_json(sheet, { defval:"" });
+          const rows = XLSX.utils.sheet_to_json(sheet, { defval:"", raw:false });
 
           const mapped = rows
             .filter(row => row["Character/Card Name"] || row["Set Name"] || row["Name"])
@@ -859,7 +854,7 @@ function checkPin(){
               language: normalizeLanguage(row["Language"]),
               cardName: String(row["Character/Card Name"] || "").trim(),
               setName: String(row["Set Name"] || "").trim(),
-              cardNumber: String(row["Card Number"] || "").replace(/\.0$/,"").trim(),
+              cardNumber: cleanCardNumber(row["Card Number"]),
               cardSurface: String(row["Card Surface"] || "Holofoil").trim(),
               status: String(row["Status"] || "Inventarisiert").trim(),
               submissionDate: excelDateToIso(row["Submission Date"]),
@@ -869,7 +864,7 @@ function checkPin(){
               grade: String(row["Grade"] || "").replace(/\.0$/,"").trim(),
               orderNo: String(row["Bestellung"] || "").replace(/\.0$/,"").trim(),
               submissionNo: String(row["Submission#"] || "").replace(/\.0$/,"").trim(),
-              note: "",
+              note: suspiciousCardNumber(row["Card Number"]) ? "Kartennummer beim Import prüfen: Excel hat diesen Wert vermutlich als Datum formatiert." : "",
               importedAt: new Date().toISOString(),
               updatedAt: new Date().toISOString()
             }));
@@ -893,7 +888,36 @@ function checkPin(){
       reader.readAsArrayBuffer(file);
     }
 
-    function excelDateToIso(value){
+    
+    function suspiciousCardNumber(value){
+      if(value instanceof Date) return true;
+
+      const str = String(value || "").trim();
+      if(!str) return false;
+
+      if(/GMT|Normalzeit|Daylight|Standard Time|\bMon\b|\bTue\b|\bWed\b|\bThu\b|\bFri\b|\bSat\b|\bSun\b/i.test(str)) return true;
+
+      const numeric = Number(str);
+      if(Number.isFinite(numeric) && numeric > 30000) return true;
+
+      if(/^\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}$/.test(str)) return true;
+      if(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/i.test(str)) return true;
+
+      return false;
+    }
+
+    function cleanCardNumber(value){
+      if(value === undefined || value === null) return "";
+
+      const str = String(value).trim().replace(/\.0$/, "");
+      if(!str) return "";
+
+      if(suspiciousCardNumber(value)) return "";
+
+      return str;
+    }
+
+function excelDateToIso(value){
       if(!value) return "";
       if(value instanceof Date && !isNaN(value)){
         return value.toISOString().slice(0,10);
