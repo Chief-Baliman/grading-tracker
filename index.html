@@ -102,7 +102,7 @@
       <div class="kpi"><span>Gesamt</span><strong id="kpiTotal">0</strong></div>
       <div class="kpi"><span>Inventarisiert</span><strong id="kpiInventoried">0</strong></div>
       <div class="kpi"><span>Versendet</span><strong id="kpiSent">0</strong></div>
-      <div class="kpi"><span>Bei PSA/Submission</span><strong id="kpiInGrading">0</strong></div>
+      <div class="kpi"><span>Bei Submission</span><strong id="kpiInGrading">0</strong></div>
       <div class="kpi"><span>Zurück</span><strong id="kpiReturned">0</strong></div>
       <div class="kpi"><span>Abgeschlossen</span><strong id="kpiDone">0</strong></div>
       <div class="kpi"><span>Auswahl</span><strong id="kpiSelected">0</strong></div>
@@ -364,8 +364,8 @@
 
       $("#statusSelect").innerHTML = statusOptions;
       $("#categorySelect").innerHTML = categoryOptions;
-      els.statusFilter.innerHTML = '<option value="">Alle Status</option>' + statusOptions;
-      els.categoryFilter.innerHTML = '<option value="">Alle Servicen</option>' + categoryOptions;
+      renderStatusMulti();
+      els.categoryFilter.innerHTML = '<option value="">Alle Services</option>' + categoryOptions;
       els.bulkStatus.innerHTML = statusOptions;
       els.exportStatus.innerHTML = statusOptions;
       els.exportStatus.value = "Inventarisiert";
@@ -501,6 +501,10 @@ function checkPin(){
           cards = snapshot.val() || {};
           els.sync.textContent = "Verbunden";
           render();
+        }, error => {
+          console.error(error);
+          els.sync.textContent = "Firebase-Regeln prüfen";
+          showToast("Firebase-Zugriff blockiert");
         });
       }catch(err){
         console.error(err);
