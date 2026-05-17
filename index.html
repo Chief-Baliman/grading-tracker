@@ -243,6 +243,35 @@
   <div class="toast" id="toast">Gespeichert</div>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <script>
+    window.addEventListener("DOMContentLoaded", function () {
+      var pin = document.getElementById("pinInput");
+      var btn = document.getElementById("loginBtn");
+      var login = document.getElementById("loginScreen");
+      var app = document.getElementById("app");
+
+      function fallbackUnlock() {
+        if (!pin || !btn || !login || !app) return;
+        if (pin.value === "2212") {
+          localStorage.setItem("ccGradingTrackerUnlocked", "yes");
+          login.classList.add("hidden");
+          app.classList.remove("hidden");
+        }
+      }
+
+      if (btn) btn.addEventListener("click", fallbackUnlock);
+      if (pin) pin.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") fallbackUnlock();
+      });
+
+      if (localStorage.getItem("ccGradingTrackerUnlocked") === "yes" && login && app) {
+        login.classList.add("hidden");
+        app.classList.remove("hidden");
+      }
+    });
+  </script>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import { getDatabase, ref, onValue, set, update, remove, push } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
@@ -446,7 +475,8 @@
     }
 
 function checkPin(){
-      if(els.pin.value === PIN){
+      const enteredPin = String(els.pin.value || "").trim();
+      if(enteredPin === PIN){
         localStorage.setItem("ccGradingTrackerUnlocked", "yes");
         unlock();
       }else{
