@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ChiefCards Grading Tracker</title>
+  <style>
+    :root{
+      --blue:#063692;
+      --blue-dark:#071d49;
+      --gold:#e9a846;
+      --red:#ed0502;
+      --green:#22c55e;
+      --bg:#f4f7fc;
+      --card:#fff;
+      --text:#111827;
+      --muted:#6b7280;
+      --border:#d9e1f2;
+      --soft:#f9fbff;
+      --warn:#fff8e8;
+      --bad:#fff1f2;
+      --good:#e9fbef;
+      --shadow:0 12px 32px rgba(17,24,39,.07);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at 12% 0%,rgba(233,168,70,.16),transparent 24%),radial-gradient(circle at 90% 8%,rgba(6,54,146,.13),transparent 30%),var(--bg);color:var(--text)}
+    button,input,select,textarea{font:inherit}
+    .hidden{display:none!important}
+    .login{min-height:100vh;display:grid;place-items:center;padding:18px}
+    .login-card,.card{background:#fff;border:1px solid var(--border);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .login-card{width:min(430px,100%)}
+    .logo{width:58px;height:58px;border-radius:18px;background:linear-gradient(135deg,var(--blue),var(--blue-dark));display:grid;place-items:center;color:#fff;font-size:24px;font-weight:950;margin-bottom:14px}
+    h1,h2,h3{margin:0 0 10px;color:var(--blue);line-height:1.12}
+    .small{font-size:13px;color:var(--muted);line-height:1.45;margin:6px 0 0}
+    .wrap{width:min(1680px,calc(100% - 28px));margin:0 auto;padding:22px 0 50px}
+    .hero{background:linear-gradient(135deg,#05245e,var(--blue) 58%,#081d46);color:#fff;border-radius:28px;padding:24px;box-shadow:0 20px 60px rgba(6,54,146,.22);display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+    .hero h1{color:#fff;font-size:clamp(34px,5vw,56px);letter-spacing:-.04em;margin-bottom:8px}
+    .hero p{color:rgba(255,255,255,.84);line-height:1.5;margin:0;max-width:880px}
+    .hero-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .badge{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:7px 11px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.9);font-size:13px;font-weight:850;margin-top:14px}
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--gold)}
+    button{border:0;border-radius:13px;padding:11px 14px;min-height:42px;cursor:pointer;font-weight:950;font-size:14px}
+    .primary{background:var(--gold);color:#1f2937}.secondary{background:#eef3ff;color:var(--blue);border:1px solid var(--border)}.blue{background:var(--blue);color:#fff}.danger{background:#fee2e2;color:#991b1b}.green{background:#dcfce7;color:#14532d}
+    .dash{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;margin-top:18px}
+    .kpi{background:#fff;border:1px solid var(--border);border-radius:18px;padding:15px;box-shadow:0 10px 26px rgba(17,24,39,.05)}
+    .kpi span{display:block;color:var(--muted);font-size:12px;font-weight:850;margin-bottom:5px}.kpi strong{display:block;color:var(--blue);font-size:24px;font-weight:950;line-height:1}
+    .tools{display:grid;grid-template-columns:420px minmax(0,1fr);gap:18px;align-items:start;margin-top:18px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+    .field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}
+    label{font-weight:850;font-size:13px;color:var(--text)}
+    input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13px;padding:10px 11px;background:#fff;color:var(--text)}
+    textarea{min-height:86px;resize:vertical;line-height:1.4}
+    input:focus,select:focus,textarea:focus{outline:3px solid rgba(233,168,70,.35);border-color:var(--gold)}
+    .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .filters{display:grid;grid-template-columns:minmax(220px,1fr) 160px 160px 160px 150px 150px;gap:10px;margin-bottom:12px}
+    .bulkbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:12px;background:var(--soft);border:1px solid var(--border);border-radius:18px}
+    .bulkbar select{width:auto;min-width:180px}
+    .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:18px;background:#fff}
+    table{width:100%;border-collapse:separate;border-spacing:0;min-width:1300px;font-size:13px}
+    th,td{padding:10px 9px;border-bottom:1px solid #edf1f8;text-align:left;vertical-align:top}
+    th{position:sticky;top:0;background:#f4f7fc;color:var(--blue);font-size:11px;text-transform:uppercase;z-index:1}
+    tr:hover td{background:#fbfcff}
+    .row-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .mini{min-height:30px;padding:6px 9px;border-radius:999px;font-size:12px}
+    .status-pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:950;background:#eef3ff;color:var(--blue);white-space:nowrap}
+    .status-pill.inv{background:var(--good);color:#14532d}.status-pill.out{background:var(--warn);color:#5f4100}.status-pill.done{background:#e5e7eb;color:#374151}.status-pill.bad{background:var(--bad);color:#991b1b}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,.56);display:grid;place-items:center;padding:18px;z-index:20}
+    .modal{width:min(820px,100%);max-height:92vh;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:22px;padding:18px;box-shadow:0 24px 80px rgba(0,0,0,.3)}
+    .import-box{border:1px dashed var(--border);background:var(--soft);border-radius:18px;padding:16px;margin-top:10px}
+    .toast{position:fixed;right:18px;bottom:18px;padding:12px 14px;background:#111827;color:#fff;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.22);font-size:14px;opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:50}.toast.show{opacity:1;transform:translateY(0)}
+    @media(max-width:1250px){.dash{grid-template-columns:repeat(4,1fr)}.tools{grid-template-columns:1fr}.filters{grid-template-columns:1fr 1fr 1fr}}
+    @media(max-width:700px){.wrap{width:min(100% - 18px,1680px);padding-top:10px}.hero,.card,.login-card,.modal{border-radius:18px;padding:16px}.hero{flex-direction:column}.hero-actions,.hero-actions button{width:100%}.dash,.form-grid,.filters{grid-template-columns:1fr}.btn-row button{width:100%}.bulkbar select,.bulkbar button{width:100%}}
+  </style>
+</head>
+<body>
+  <div class="login" id="loginScreen">
+    <section class="login-card">
+      <div class="logo">CC</div>
+      <h1>Grading Tracker</h1>
+      <p class="small">Interner Zugriff für Grading-Submissions und SLAP-CSV-Exporte.</p>
+      <div class="field" style="margin-top:16px"><label for="pinInput">PIN</label><input id="pinInput" type="password" inputmode="numeric" placeholder="PIN eingeben"></div>
+      <div class="btn-row"><button class="primary" id="loginBtn" type="button">Entsperren</button></div>
+    </section>
+  </div>
+
+  <main class="wrap hidden" id="app">
+    <section class="hero">
+      <div>
+        <h1>Grading Tracker</h1>
+        <p>Karten erfassen, Status pflegen, Submissionnummern dokumentieren und CSV-Dateien für SLAP nach Kategorie exportieren.</p>
+        <span class="badge"><span class="dot"></span><span id="syncStatus">Firebase wird verbunden...</span></span>
+      </div>
+      <div class="hero-actions">
+        <button class="secondary" id="importBtn" type="button">XLSX importieren</button>
+        <button class="secondary" id="exportBackupBtn" type="button">Backup CSV</button>
+        <button class="secondary" id="lockBtn" type="button">Sperren</button>
+      </div>
+    </section>
+
+    <section class="dash">
+      <div class="kpi"><span>Gesamt</span><strong id="kpiTotal">0</strong></div>
+      <div class="kpi"><span>Inventarisiert</span><strong id="kpiInventoried">0</strong></div>
+      <div class="kpi"><span>Versendet</span><strong id="kpiSent">0</strong></div>
+      <div class="kpi"><span>Bei PSA/SLAP</span><strong id="kpiInGrading">0</strong></div>
+      <div class="kpi"><span>Zurück</span><strong id="kpiReturned">0</strong></div>
+      <div class="kpi"><span>Abgeschlossen</span><strong id="kpiDone">0</strong></div>
+      <div class="kpi"><span>Auswahl</span><strong id="kpiSelected">0</strong></div>
+    </section>
+
+    <section class="tools">
+      <aside class="card">
+        <h2 id="formTitle">Karte erfassen</h2>
+        <form id="cardForm">
+          <input type="hidden" id="cardId">
+          <div class="form-grid">
+            <div class="field"><label>#</label><input data-field="number" type="number" min="0" step="1"></div>
+            <div class="field"><label>Year</label><input data-field="year" type="number" min="1900" max="2100" step="1"></div>
+            <div class="field"><label>Brand/Game/Producer</label><input data-field="tcg" value="Pokemon"></div>
+            <div class="field"><label>Language</label><select data-field="language"><option>German</option><option>English</option><option>Japanese</option><option>Chinese</option><option>Korean</option><option>Other</option></select></div>
+            <div class="field full"><label>Character/Card Name</label><input data-field="cardName"></div>
+            <div class="field full"><label>Set Name</label><input data-field="setName"></div>
+            <div class="field"><label>Card Number</label><input data-field="cardNumber"></div>
+            <div class="field"><label>Card Surface</label><select data-field="cardSurface"><option>Holofoil</option><option>Non-Holo</option><option>Foil</option><option>Other</option></select></div>
+            <div class="field"><label>Status</label><select data-field="status" id="statusSelect"></select></div>
+            <div class="field"><label>Kategorie</label><select data-field="category" id="categorySelect"></select></div>
+            <div class="field"><label>Submission Date</label><input data-field="submissionDate" type="date"></div>
+            <div class="field"><label>Grade</label><input data-field="grade"></div>
+            <div class="field"><label>Kundenname</label><input data-field="customerName"></div>
+            <div class="field"><label>Bestellung</label><input data-field="orderNo"></div>
+            <div class="field"><label>Submission#</label><input data-field="submissionNo"></div>
+            <div class="field full"><label>Notiz</label><textarea data-field="note"></textarea></div>
+          </div>
+          <div class="btn-row">
+            <button class="primary" type="submit" id="saveBtn">Speichern</button>
+            <button class="secondary" type="button" id="newBtn">Neu</button>
+            <button class="danger hidden" type="button" id="deleteBtn">Löschen</button>
+          </div>
+        </form>
+      </aside>
+
+      <section class="card">
+        <h2>Kartenübersicht</h2>
+
+        <div class="filters">
+          <input id="searchInput" placeholder="Suche nach Karte, Kunde, Bestellung...">
+          <select id="statusFilter"><option value="">Alle Status</option></select>
+          <select id="categoryFilter"><option value="">Alle Kategorien</option></select>
+          <select id="customerFilter"><option value="">Alle Kunden</option></select>
+          <select id="sortSelect"><option value="numberAsc"># aufsteigend</option><option value="dateDesc">Datum neu</option><option value="nameAsc">Karte A-Z</option><option value="customerAsc">Kunde A-Z</option></select>
+          <button class="secondary" id="clearFiltersBtn" type="button">Filter leeren</button>
+        </div>
+
+        <div class="bulkbar">
+          <strong id="selectedText">0 ausgewählt</strong>
+          <select id="bulkStatus"></select>
+          <button class="green" id="bulkStatusBtn" type="button">Status ändern</button>
+          <input id="bulkSubmissionNo" placeholder="Submission# eintragen">
+          <button class="secondary" id="bulkSubmissionBtn" type="button">Submission# setzen</button>
+        </div>
+
+        <div class="bulkbar">
+          <strong>SLAP-Export</strong>
+          <select id="exportCategory"></select>
+          <select id="exportStatus"></select>
+          <button class="primary" id="slapExportBtn" type="button">CSV für SLAP exportieren</button>
+          <span class="small">Exportiert exakt: Year, Brand/Game/Producer, Language, Character/Card Name, Set Name, Card Number, Card Surface</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="selectAll"></th>
+                <th>#</th>
+                <th>Karte</th>
+                <th>Set</th>
+                <th>Nr.</th>
+                <th>TCG</th>
+                <th>Sprache</th>
+                <th>Surface</th>
+                <th>Status</th>
+                <th>Kategorie</th>
+                <th>Kunde</th>
+                <th>Bestellung</th>
+                <th>Submission#</th>
+                <th>Grade</th>
+                <th>Aktion</th>
+              </tr>
+            </thead>
+            <tbody id="cardsBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div class="modal-backdrop hidden" id="importModal">
+    <section class="modal">
+      <h2>XLSX aus Google Sheet importieren</h2>
+      <p class="small">Importiert das Tabellenblatt „Vorbereitung Submission“. Bestehende Karten werden nicht automatisch gelöscht. Du kannst den Import auch für eine Migration nutzen.</p>
+      <div class="import-box">
+        <input type="file" id="xlsxInput" accept=".xlsx,.xls">
+        <p class="small">Spalten werden anhand deiner Sheet-Struktur zugeordnet.</p>
+      </div>
+      <div class="btn-row">
+        <button class="primary" id="startImportBtn" type="button">Import starten</button>
+        <button class="secondary" id="closeImportBtn" type="button">Schließen</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast">Gespeichert</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import { getDatabase, ref, onValue, set, update, remove, push } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+
+    const PIN = "2212";
+    const PATH = "gradingTracker/cards";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA5kq-HiCkVroQLCwwVc24C8XYPJTZvegM",
+      authDomain: "queue-tracker-3fa3c.firebaseapp.com",
+      databaseURL: "https://queue-tracker-3fa3c-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "queue-tracker-3fa3c",
+      storageBucket: "queue-tracker-3fa3c.firebasestorage.app",
+      messagingSenderId: "132132188124",
+      appId: "1:132132188124:web:ecc130f7ee7ac9d61be919",
+      measurementId: "G-3QBWJHGDXG"
+    };
+
+    const STATUSES = ["Lieferung ausstehend","Inventarisiert","Vorbereitung","Versendet","Research","Grading","Assembling","QA Check 1","QA Check 2","Rückweg","Zurück","Bereit","Abgeschlossen","Problem"];
+    const CATEGORIES = ["Value","Bulk","Regular","Dual","Beckett","Beckett Dual","Express"];
+
+    const $ = (s, r=document) => r.querySelector(s);
+    const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+    const els = {
+      login:$("#loginScreen"), pin:$("#pinInput"), loginBtn:$("#loginBtn"), app:$("#app"), sync:$("#syncStatus"), lock:$("#lockBtn"),
+      importBtn:$("#importBtn"), importModal:$("#importModal"), closeImport:$("#closeImportBtn"), startImport:$("#startImportBtn"), xlsxInput:$("#xlsxInput"),
+      form:$("#cardForm"), cardId:$("#cardId"), save:$("#saveBtn"), newBtn:$("#newBtn"), del:$("#deleteBtn"),
+      search:$("#searchInput"), statusFilter:$("#statusFilter"), categoryFilter:$("#categoryFilter"), customerFilter:$("#customerFilter"), sort:$("#sortSelect"), clearFilters:$("#clearFiltersBtn"),
+      body:$("#cardsBody"), selectAll:$("#selectAll"), selectedText:$("#selectedText"), bulkStatus:$("#bulkStatus"), bulkStatusBtn:$("#bulkStatusBtn"), bulkSubmissionNo:$("#bulkSubmissionNo"), bulkSubmissionBtn:$("#bulkSubmissionBtn"),
+      exportCategory:$("#exportCategory"), exportStatus:$("#exportStatus"), slapExport:$("#slapExportBtn"), exportBackup:$("#exportBackupBtn"),
+      toast:$("#toast"),
+      kpiTotal:$("#kpiTotal"), kpiInventoried:$("#kpiInventoried"), kpiSent:$("#kpiSent"), kpiInGrading:$("#kpiInGrading"), kpiReturned:$("#kpiReturned"), kpiDone:$("#kpiDone"), kpiSelected:$("#kpiSelected")
+    };
+
+    let db;
+    let cards = {};
+    let selected = new Set();
+
+    init();
+
+    function init(){
+      fillSelects();
+      resetForm();
+
+      if(localStorage.getItem("ccGradingTrackerUnlocked") === "yes") unlock();
+
+      els.loginBtn.addEventListener("click", checkPin);
+      els.pin.addEventListener("keydown", e => { if(e.key === "Enter") checkPin(); });
+      els.lock.addEventListener("click", () => { localStorage.removeItem("ccGradingTrackerUnlocked"); location.reload(); });
+      els.form.addEventListener("submit", saveCard);
+      els.newBtn.addEventListener("click", resetForm);
+      els.del.addEventListener("click", deleteCard);
+
+      [els.search, els.statusFilter, els.categoryFilter, els.customerFilter, els.sort].forEach(el => el.addEventListener("input", render));
+
+      els.clearFilters.addEventListener("click", () => {
+        els.search.value = "";
+        els.statusFilter.value = "";
+        els.categoryFilter.value = "";
+        els.customerFilter.value = "";
+        els.sort.value = "numberAsc";
+        render();
+      });
+
+      els.selectAll.addEventListener("change", toggleSelectAll);
+      els.bulkStatusBtn.addEventListener("click", bulkUpdateStatus);
+      els.bulkSubmissionBtn.addEventListener("click", bulkUpdateSubmissionNo);
+      els.slapExport.addEventListener("click", exportSlapCsv);
+      els.exportBackup.addEventListener("click", exportBackupCsv);
+
+      els.importBtn.addEventListener("click", () => els.importModal.classList.remove("hidden"));
+      els.closeImport.addEventListener("click", () => els.importModal.classList.add("hidden"));
+      els.startImport.addEventListener("click", importXlsx);
+    }
+
+    function fillSelects(){
+      const statusOptions = STATUSES.map(s => `<option>${esc(s)}</option>`).join("");
+      const categoryOptions = CATEGORIES.map(s => `<option>${esc(s)}</option>`).join("");
+
+      $("#statusSelect").innerHTML = statusOptions;
+      $("#categorySelect").innerHTML = categoryOptions;
+      els.statusFilter.innerHTML = '<option value="">Alle Status</option>' + statusOptions;
+      els.categoryFilter.innerHTML = '<option value="">Alle Kategorien</option>' + categoryOptions;
+      els.bulkStatus.innerHTML = statusOptions;
+      els.exportStatus.innerHTML = statusOptions;
+      els.exportStatus.value = "Inventarisiert";
+      els.exportCategory.innerHTML = categoryOptions;
+    }
+
+    function checkPin(){
+      if(els.pin.value === PIN){
+        localStorage.setItem("ccGradingTrackerUnlocked", "yes");
+        unlock();
+      }else{
+        showToast("Falsche PIN");
+        els.pin.value = "";
+        els.pin.focus();
+      }
+    }
+
+    function unlock(){
+      els.login.classList.add("hidden");
+      els.app.classList.remove("hidden");
+      setupFirebase();
+    }
+
+    function setupFirebase(){
+      if(db) return;
+      try{
+        const app = initializeApp(firebaseConfig);
+        db = getDatabase(app);
+        onValue(ref(db, PATH), snapshot => {
+          cards = snapshot.val() || {};
+          els.sync.textContent = "Verbunden";
+          render();
+        });
+      }catch(err){
+        console.error(err);
+        els.sync.textContent = "Firebase-Fehler";
+        showToast("Firebase konnte nicht verbunden werden");
+      }
+    }
+
+    function readForm(){
+      const values = {};
+      $$("[data-field]", els.form).forEach(field => values[field.dataset.field] = field.value || "");
+      return {
+        ...values,
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    function setForm(card){
+      $$("[data-field]", els.form).forEach(field => {
+        const value = card[field.dataset.field];
+        if(value !== undefined && value !== null){
+          if(field.tagName === "SELECT" && value && !Array.from(field.options).some(o => o.value === String(value))){
+            const opt = document.createElement("option");
+            opt.value = String(value);
+            opt.textContent = String(value);
+            field.appendChild(opt);
+          }
+          field.value = value;
+        }
+      });
+      els.cardId.value = card.id || "";
+      els.del.classList.toggle("hidden", !card.id);
+      els.save.textContent = card.id ? "Änderungen speichern" : "Speichern";
+      window.scrollTo({ top: document.querySelector(".tools").offsetTop - 10, behavior:"smooth" });
+    }
+
+    function resetForm(){
+      els.form.reset();
+      els.cardId.value = "";
+      els.del.classList.add("hidden");
+      els.save.textContent = "Speichern";
+      $('[data-field="tcg"]', els.form).value = "Pokemon";
+      $('[data-field="cardSurface"]', els.form).value = "Holofoil";
+      $('[data-field="status"]', els.form).value = "Inventarisiert";
+      $('[data-field="category"]', els.form).value = "Value";
+    }
+
+    async function saveCard(event){
+      event.preventDefault();
+      if(!db){ showToast("Firebase noch nicht verbunden"); return; }
+
+      const value = readForm();
+      const id = els.cardId.value;
+
+      try{
+        if(id){
+          await update(ref(db, `${PATH}/${id}`), value);
+          showToast("Aktualisiert");
+        }else{
+          const newRef = push(ref(db, PATH));
+          value.createdAt = new Date().toISOString();
+          await set(newRef, value);
+          showToast("Gespeichert");
+        }
+        resetForm();
+      }catch(err){
+        console.error(err);
+        showToast("Speichern fehlgeschlagen");
+      }
+    }
+
+    async function deleteCard(){
+      const id = els.cardId.value;
+      if(!id) return;
+      if(!confirm("Diese Karte wirklich löschen?")) return;
+
+      try{
+        await remove(ref(db, `${PATH}/${id}`));
+        selected.delete(id);
+        resetForm();
+        showToast("Gelöscht");
+      }catch(err){
+        console.error(err);
+        showToast("Löschen fehlgeschlagen");
+      }
+    }
+
+    function cardArray(){
+      return Object.entries(cards).map(([id, card]) => ({ id, ...card }));
+    }
+
+    function filteredCards(){
+      let arr = cardArray();
+      const q = norm(els.search.value);
+      const status = els.statusFilter.value;
+      const category = els.categoryFilter.value;
+      const customer = els.customerFilter.value;
+
+      if(q) arr = arr.filter(c => norm(Object.values(c).join(" ")).includes(q));
+      if(status) arr = arr.filter(c => c.status === status);
+      if(category) arr = arr.filter(c => c.category === category);
+      if(customer) arr = arr.filter(c => c.customerName === customer);
+
+      const sort = els.sort.value;
+      arr.sort((a,b) => {
+        if(sort === "dateDesc") return String(b.submissionDate || "").localeCompare(String(a.submissionDate || ""));
+        if(sort === "nameAsc") return String(a.cardName || "").localeCompare(String(b.cardName || ""));
+        if(sort === "customerAsc") return String(a.customerName || "").localeCompare(String(b.customerName || ""));
+        return intVal(a.number) - intVal(b.number);
+      });
+
+      return arr;
+    }
+
+    function render(){
+      renderDashboard();
+      renderCustomerFilter();
+
+      const arr = filteredCards();
+      els.body.innerHTML = "";
+
+      arr.forEach(card => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><input type="checkbox" data-id="${card.id}" ${selected.has(card.id) ? "checked" : ""}></td>
+          <td>${esc(card.number || "")}</td>
+          <td><strong>${esc(card.cardName || "")}</strong></td>
+          <td>${esc(card.setName || "")}</td>
+          <td>${esc(card.cardNumber || "")}</td>
+          <td>${esc(card.tcg || "")}</td>
+          <td>${esc(card.language || "")}</td>
+          <td>${esc(card.cardSurface || "")}</td>
+          <td><span class="status-pill ${statusClass(card.status)}">${esc(card.status || "")}</span></td>
+          <td>${esc(card.category || "")}</td>
+          <td>${esc(card.customerName || "")}</td>
+          <td>${esc(card.orderNo || "")}</td>
+          <td>${esc(card.submissionNo || "")}</td>
+          <td>${esc(card.grade || "")}</td>
+          <td><div class="row-actions"><button class="mini blue" data-edit>Bearbeiten</button><button class="mini secondary" data-dup>Duplizieren</button></div></td>
+        `;
+
+        const checkbox = tr.querySelector("input[type='checkbox']");
+        checkbox.addEventListener("change", () => {
+          if(checkbox.checked) selected.add(card.id);
+          else selected.delete(card.id);
+          renderDashboard();
+          updateSelectedText();
+        });
+
+        tr.querySelector("[data-edit]").addEventListener("click", () => setForm(card));
+        tr.querySelector("[data-dup]").addEventListener("click", () => {
+          const copy = {...card};
+          delete copy.id;
+          copy.number = "";
+          setForm(copy);
+        });
+
+        els.body.appendChild(tr);
+      });
+
+      updateSelectedText();
+      els.selectAll.checked = arr.length > 0 && arr.every(c => selected.has(c.id));
+    }
+
+    function renderDashboard(){
+      const arr = cardArray();
+      els.kpiTotal.textContent = arr.length;
+      els.kpiInventoried.textContent = arr.filter(c => c.status === "Inventarisiert").length;
+      els.kpiSent.textContent = arr.filter(c => c.status === "Versendet").length;
+      els.kpiInGrading.textContent = arr.filter(c => ["Research","Grading","Assembling","QA Check 1","QA Check 2"].includes(c.status)).length;
+      els.kpiReturned.textContent = arr.filter(c => ["Rückweg","Zurück","Bereit"].includes(c.status)).length;
+      els.kpiDone.textContent = arr.filter(c => c.status === "Abgeschlossen").length;
+      els.kpiSelected.textContent = selected.size;
+    }
+
+    function renderCustomerFilter(){
+      const current = els.customerFilter.value;
+      const customers = [...new Set(cardArray().map(c => c.customerName).filter(Boolean))].sort((a,b) => a.localeCompare(b));
+      els.customerFilter.innerHTML = '<option value="">Alle Kunden</option>' + customers.map(c => `<option>${esc(c)}</option>`).join("");
+      els.customerFilter.value = customers.includes(current) ? current : "";
+    }
+
+    function updateSelectedText(){
+      els.selectedText.textContent = `${selected.size} ausgewählt`;
+    }
+
+    function toggleSelectAll(){
+      const arr = filteredCards();
+      if(els.selectAll.checked) arr.forEach(c => selected.add(c.id));
+      else arr.forEach(c => selected.delete(c.id));
+      render();
+    }
+
+    async function bulkUpdateStatus(){
+      if(!selected.size){ showToast("Keine Karten ausgewählt"); return; }
+      const status = els.bulkStatus.value;
+
+      try{
+        await Promise.all([...selected].map(id => update(ref(db, `${PATH}/${id}`), { status, updatedAt: new Date().toISOString() })));
+        showToast("Status geändert");
+      }catch(err){
+        console.error(err);
+        showToast("Statusänderung fehlgeschlagen");
+      }
+    }
+
+    async function bulkUpdateSubmissionNo(){
+      if(!selected.size){ showToast("Keine Karten ausgewählt"); return; }
+      const submissionNo = els.bulkSubmissionNo.value.trim();
+      if(!submissionNo){ showToast("Submission# fehlt"); return; }
+
+      try{
+        await Promise.all([...selected].map(id => update(ref(db, `${PATH}/${id}`), { submissionNo, updatedAt: new Date().toISOString() })));
+        els.bulkSubmissionNo.value = "";
+        showToast("Submission# gesetzt");
+      }catch(err){
+        console.error(err);
+        showToast("Submission# fehlgeschlagen");
+      }
+    }
+
+    function exportSlapCsv(){
+      const category = els.exportCategory.value;
+      const status = els.exportStatus.value;
+
+      const rows = cardArray().filter(card => card.category === category && card.status === status);
+
+      if(!rows.length){
+        showToast("Keine passenden Karten");
+        return;
+      }
+
+      const headers = ["Year","Brand/Game/Producer","Language","Character/Card Name","Set Name","Card Number","Card Surface"];
+      const csvRows = [headers];
+
+      rows.forEach(card => {
+        csvRows.push([
+          cleanYear(card.year),
+          card.tcg || "",
+          card.language || "",
+          card.cardName || "",
+          card.setName || "",
+          card.cardNumber || "",
+          card.cardSurface || ""
+        ]);
+      });
+
+      downloadCsv(csvRows, `SLAP_${category}_${status}_${dateStamp()}.csv`);
+    }
+
+    function exportBackupCsv(){
+      const headers = ["#","Year","Brand/Game/Producer","Language","Character/Card Name","Set Name","Card Number","Card Surface","Status","Submission Date","Name","Category","Grade","Bestellung","Submission#","Notiz"];
+      const rows = [headers];
+
+      cardArray().forEach(card => rows.push([
+        card.number || "",
+        cleanYear(card.year),
+        card.tcg || "",
+        card.language || "",
+        card.cardName || "",
+        card.setName || "",
+        card.cardNumber || "",
+        card.cardSurface || "",
+        card.status || "",
+        card.submissionDate || "",
+        card.customerName || "",
+        card.category || "",
+        card.grade || "",
+        card.orderNo || "",
+        card.submissionNo || "",
+        card.note || ""
+      ]));
+
+      downloadCsv(rows, `Grading_Backup_${dateStamp()}.csv`);
+    }
+
+    function downloadCsv(rows, filename){
+      const csv = rows.map(row => row.map(csvCell).join(",")).join("\n");
+      const blob = new Blob(["\ufeff" + csv], { type:"text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("CSV exportiert");
+    }
+
+    function importXlsx(){
+      const file = els.xlsxInput.files[0];
+      if(!file){ showToast("Bitte XLSX auswählen"); return; }
+      if(!window.XLSX){ showToast("XLSX-Bibliothek nicht geladen"); return; }
+
+      const reader = new FileReader();
+      reader.onload = async function(event){
+        try{
+          const data = new Uint8Array(event.target.result);
+          const workbook = XLSX.read(data, { type:"array", cellDates:true });
+          const sheetName = workbook.SheetNames.includes("Vorbereitung Submission") ? "Vorbereitung Submission" : workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const rows = XLSX.utils.sheet_to_json(sheet, { defval:"" });
+
+          const mapped = rows
+            .filter(row => row["Character/Card Name"] || row["Set Name"] || row["Name"])
+            .map(row => ({
+              number: String(row["#"] || "").replace(/\.0$/,""),
+              year: cleanYear(row["Year"]),
+              tcg: String(row["TCG"] || row["Brand/Game/Producer"] || "Pokemon").trim(),
+              language: normalizeLanguage(row["Language"]),
+              cardName: String(row["Character/Card Name"] || "").trim(),
+              setName: String(row["Set Name"] || "").trim(),
+              cardNumber: String(row["Card Number"] || "").replace(/\.0$/,"").trim(),
+              cardSurface: String(row["Card Surface"] || "Holofoil").trim(),
+              status: String(row["Status"] || "Inventarisiert").trim(),
+              submissionDate: excelDateToIso(row["Submission Date"]),
+              customerName: String(row["Name"] || "").trim(),
+              category: String(row["Category"] || "Value").trim(),
+              grade: String(row["Grade"] || "").replace(/\.0$/,"").trim(),
+              orderNo: String(row["Bestellung"] || "").replace(/\.0$/,"").trim(),
+              submissionNo: String(row["Submission#"] || "").replace(/\.0$/,"").trim(),
+              note: "",
+              importedAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }));
+
+          if(!mapped.length){
+            showToast("Keine Karten erkannt");
+            return;
+          }
+
+          if(!confirm(`${mapped.length} Karten importieren? Bestehende Daten bleiben erhalten.`)) return;
+
+          await Promise.all(mapped.map(card => set(push(ref(db, PATH)), card)));
+          els.importModal.classList.add("hidden");
+          els.xlsxInput.value = "";
+          showToast(`${mapped.length} Karten importiert`);
+        }catch(err){
+          console.error(err);
+          showToast("Import fehlgeschlagen");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function excelDateToIso(value){
+      if(!value) return "";
+      if(value instanceof Date && !isNaN(value)){
+        return value.toISOString().slice(0,10);
+      }
+      if(typeof value === "number"){
+        const date = new Date(Math.round((value - 25569) * 86400 * 1000));
+        if(!isNaN(date)) return date.toISOString().slice(0,10);
+      }
+      const str = String(value).trim();
+      if(/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+      return str;
+    }
+
+    function cleanYear(value){
+      const str = String(value || "").trim().replace(/\.0$/,"");
+      return str;
+    }
+
+    function normalizeLanguage(value){
+      const str = String(value || "").trim();
+      if(!str) return "";
+      const lower = str.toLowerCase();
+      if(lower === "deutsch") return "German";
+      if(lower === "englisch") return "English";
+      if(lower === "japanisch") return "Japanese";
+      return str;
+    }
+
+    function statusClass(status){
+      if(status === "Inventarisiert") return "inv";
+      if(["Versendet","Research","Grading","Assembling","QA Check 1","QA Check 2"].includes(status)) return "out";
+      if(status === "Abgeschlossen") return "done";
+      if(status === "Problem") return "bad";
+      return "";
+    }
+
+    function norm(value){
+      return String(value || "").toLowerCase().replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss");
+    }
+
+    function intVal(value){
+      const n = parseInt(String(value || "").replace(/[^\d-]/g,""), 10);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function csvCell(value){
+      return '"' + String(value ?? "").replace(/"/g,'""') + '"';
+    }
+
+    function dateStamp(){
+      return new Date().toISOString().slice(0,10);
+    }
+
+    function esc(value){
+      return String(value || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    function showToast(text){
+      els.toast.textContent = text;
+      els.toast.classList.add("show");
+      setTimeout(() => els.toast.classList.remove("show"), 1800);
+    }
+  </script>
+</body>
+</html>
