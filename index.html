@@ -66,7 +66,7 @@
     .status-pill.inv{background:var(--good);color:#14532d}.status-pill.out{background:var(--warn);color:#5f4100}.status-pill.done{background:#e5e7eb;color:#374151}.status-pill.bad{background:var(--bad);color:#991b1b}
     .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,.56);display:grid;place-items:center;padding:18px;z-index:20}
     .modal{width:min(820px,100%);max-height:92vh;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:22px;padding:18px;box-shadow:0 24px 80px rgba(0,0,0,.3)}
-    .import-box{border:1px dashed var(--border);background:var(--soft);border-radius:18px;padding:16px;margin-top:10px}
+    .import-box{border:1px dashed var(--border);background:var(--soft);border-radius:18px;padding:16px;margin-top:10px}.service-groups{grid-column:1/-1;display:grid;gap:10px}.service-group{display:grid;grid-template-columns:1fr 130px auto;gap:10px;align-items:end;padding:12px;border:1px solid var(--border);border-radius:16px;background:var(--soft)}.service-group button{min-height:40px;padding:8px 10px;border-radius:12px}@media(max-width:700px){.service-group{grid-template-columns:1fr}}
     .toast{position:fixed;right:18px;bottom:18px;padding:12px 14px;background:#111827;color:#fff;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.22);font-size:14px;opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:50}.toast.show{opacity:1;transform:translateY(0)}
     @media(max-width:1250px){.dash{grid-template-columns:repeat(4,1fr)}.tools{grid-template-columns:1fr}.tools>aside.card{position:static;max-height:none;overflow:visible}.filters{grid-template-columns:1.3fr 1fr 1fr 1fr}}
     @media(max-width:700px){.wrap{width:min(100% - 18px,1680px);padding-top:10px}.hero,.card,.login-card,.modal{border-radius:18px;padding:16px}.hero{flex-direction:column}.hero-actions,.hero-actions button{width:100%}.dash,.form-grid,.filters{grid-template-columns:1fr}.btn-row button{width:100%}.bulkbar select,.bulkbar button{width:100%}}
@@ -205,15 +205,18 @@
   <div class="modal-backdrop hidden" id="submissionModal">
     <section class="modal">
       <h2>Neue Submission anlegen</h2>
-      <p class="small">Lege schnell leere Kartenzeilen an, sobald ein Kunde z. B. 5x PSA Value gebucht hat. Die Karteninfos kannst du später ergänzen, sobald die Karten da sind.</p>
+      <p class="small">Lege schnell leere Kartenzeilen an, sobald ein Kunde einen oder mehrere Services gebucht hat. Du kannst mehrere Services mit eigener Anzahl hinzufügen.</p>
 
       <div class="form-grid" style="margin-top:14px;">
         <div class="field"><label>Kundenname</label><input id="subCustomerName" placeholder="Max Mustermann"></div>
         <div class="field"><label>E-Mail optional</label><input id="subCustomerEmail" type="email" placeholder="kunde@mail.de"></div>
         <div class="field"><label>Bestellung</label><input id="subOrderNo" placeholder="Bestellnummer"></div>
         <div class="field"><label>Submission Date optional</label><input id="subDate" type="date"></div>
-        <div class="field"><label>Service</label><select id="subCategory"></select></div>
-        <div class="field"><label>Anzahl Karten</label><input id="subCount" type="number" min="1" max="500" step="1" value="1"></div>
+        <div class="service-groups">
+          <label>Gebuchte Services</label>
+          <div id="serviceGroups"></div>
+          <button class="secondary" id="addServiceGroupBtn" type="button">+ weiteren Service hinzufügen</button>
+        </div>
         <div class="field"><label>TCG</label><input id="subTcg" value="Pokemon"></div>
         <div class="field"><label>Sprache Default</label><select id="subLanguage"><option value="">Offen</option><option>German</option><option>English</option><option>Japanese</option><option>Chinese</option><option>Korean</option><option>Other</option></select></div>
         <div class="field full"><label>Notiz optional</label><textarea id="subNote" placeholder="z. B. Kunde bringt Karten beim Stream mit"></textarea></div>
@@ -299,7 +302,7 @@
     const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
     const els = {
       login:$("#loginScreen"), pin:$("#pinInput"), loginBtn:$("#loginBtn"), app:$("#app"), sync:$("#syncStatus"), lock:$("#lockBtn"),
-      newSubmissionBtn:$("#newSubmissionBtn"), submissionModal:$("#submissionModal"), closeSubmission:$("#closeSubmissionBtn"), createSubmission:$("#createSubmissionBtn"), subCustomerName:$("#subCustomerName"), subCustomerEmail:$("#subCustomerEmail"), subOrderNo:$("#subOrderNo"), subDate:$("#subDate"), subCategory:$("#subCategory"), subCount:$("#subCount"), subTcg:$("#subTcg"), subLanguage:$("#subLanguage"), subNote:$("#subNote"), importBtn:$("#importBtn"), importModal:$("#importModal"), closeImport:$("#closeImportBtn"), startImport:$("#startImportBtn"), xlsxInput:$("#xlsxInput"),
+      newSubmissionBtn:$("#newSubmissionBtn"), submissionModal:$("#submissionModal"), closeSubmission:$("#closeSubmissionBtn"), createSubmission:$("#createSubmissionBtn"), subCustomerName:$("#subCustomerName"), subCustomerEmail:$("#subCustomerEmail"), subOrderNo:$("#subOrderNo"), subDate:$("#subDate"), serviceGroups:$("#serviceGroups"), addServiceGroupBtn:$("#addServiceGroupBtn"), subTcg:$("#subTcg"), subLanguage:$("#subLanguage"), subNote:$("#subNote"), importBtn:$("#importBtn"), importModal:$("#importModal"), closeImport:$("#closeImportBtn"), startImport:$("#startImportBtn"), xlsxInput:$("#xlsxInput"),
       form:$("#cardForm"), cardId:$("#cardId"), save:$("#saveBtn"), newBtn:$("#newBtn"), del:$("#deleteBtn"),
       search:$("#searchInput"), statusMode:$("#statusMode"), statusMultiBtn:$("#statusMultiBtn"), statusMultiText:$("#statusMultiText"), statusMultiPanel:$("#statusMultiPanel"), categoryFilter:$("#categoryFilter"), customerFilter:$("#customerFilter"), sort:$("#sortSelect"), clearFilters:$("#clearFiltersBtn"),
       body:$("#cardsBody"), selectAll:$("#selectAll"), selectedText:$("#selectedText"), clearSelection:$("#clearSelectionBtn"), bulkStatus:$("#bulkStatus"), bulkStatusBtn:$("#bulkStatusBtn"), bulkSubmissionNo:$("#bulkSubmissionNo"), bulkSubmissionBtn:$("#bulkSubmissionBtn"),
@@ -356,6 +359,7 @@
       els.newSubmissionBtn.addEventListener("click", openNewSubmissionModal);
       els.closeSubmission.addEventListener("click", () => els.submissionModal.classList.add("hidden"));
       els.createSubmission.addEventListener("click", createNewSubmissionRows);
+      els.addServiceGroupBtn.addEventListener("click", () => addServiceGroup());
       els.importBtn.addEventListener("click", () => els.importModal.classList.remove("hidden"));
       els.closeImport.addEventListener("click", () => els.importModal.classList.add("hidden"));
       els.startImport.addEventListener("click", importXlsx);
@@ -373,7 +377,6 @@
       els.exportStatus.innerHTML = statusOptions;
       els.exportStatus.value = "Inventarisiert";
       els.exportCategory.innerHTML = categoryOptions;
-      els.subCategory.innerHTML = categoryOptions;
     }
 
     
@@ -427,10 +430,47 @@
       }
     }
 
+    function addServiceGroup(values = {}){
+      const group = document.createElement("div");
+      group.className = "service-group";
+      group.innerHTML = `
+        <div class="field">
+          <label>Service</label>
+          <select data-service-category>${CATEGORIES.map(cat => `<option ${cat === (values.category || "Value") ? "selected" : ""}>${esc(cat)}</option>`).join("")}</select>
+        </div>
+        <div class="field">
+          <label>Anzahl</label>
+          <input data-service-count type="number" min="1" max="500" step="1" value="${esc(values.count || "1")}">
+        </div>
+        <button class="danger" type="button" data-remove-service>Entfernen</button>
+      `;
+
+      group.querySelector("[data-remove-service]").addEventListener("click", () => {
+        if($$(".service-group", els.serviceGroups).length <= 1){
+          showToast("Mindestens ein Service nötig");
+          return;
+        }
+        group.remove();
+      });
+
+      els.serviceGroups.appendChild(group);
+    }
+
+    function resetServiceGroups(){
+      els.serviceGroups.innerHTML = "";
+      addServiceGroup({ category: "Value", count: "1" });
+    }
+
+    function getServiceGroups(){
+      return $$(".service-group", els.serviceGroups).map(group => ({
+        category: group.querySelector("[data-service-category]").value,
+        count: intVal(group.querySelector("[data-service-count]").value)
+      })).filter(group => group.category && group.count > 0);
+    }
+
     function openNewSubmissionModal(){
       els.submissionModal.classList.remove("hidden");
-      els.subCount.value = "1";
-      els.subCategory.value = "Value";
+      resetServiceGroups();
       els.subTcg.value = "Pokemon";
       els.subLanguage.value = "";
       els.subCustomerName.focus();
@@ -439,49 +479,54 @@
     async function createNewSubmissionRows(){
       if(!db){ showToast("Firebase noch nicht verbunden"); return; }
 
-      const count = intVal(els.subCount.value);
+      const groups = getServiceGroups();
+      const totalCount = groups.reduce((sum, group) => sum + group.count, 0);
       const customerName = els.subCustomerName.value.trim();
       const customerEmail = els.subCustomerEmail.value.trim();
       const orderNo = els.subOrderNo.value.trim();
-      const category = els.subCategory.value;
       const submissionDate = els.subDate.value;
       const tcg = els.subTcg.value.trim() || "Pokemon";
       const language = els.subLanguage.value;
       const note = els.subNote.value.trim();
 
       if(!customerName){ showToast("Kundenname fehlt"); els.subCustomerName.focus(); return; }
-      if(!count || count < 1){ showToast("Anzahl fehlt"); els.subCount.focus(); return; }
+      if(!groups.length || totalCount < 1){ showToast("Service und Anzahl fehlen"); return; }
 
       const currentMax = cardArray().reduce((max, card) => Math.max(max, intVal(card.number)), 0);
 
       try{
         const tasks = [];
-        for(let i = 0; i < count; i++){
-          const newRef = push(ref(db, PATH));
-          const card = {
-            number: String(currentMax + i + 1),
-            year: "",
-            tcg,
-            language,
-            cardName: "",
-            setName: "",
-            cardNumber: "",
-            cardSurface: "Holofoil",
-            status: "Lieferung ausstehend",
-            submissionDate,
-            customerName,
-            customerEmail,
-            category,
-            grade: "",
-            orderNo,
-            submissionNo: "",
-            note,
-            createdBySubmissionTool: "Ja",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          };
-          tasks.push(set(newRef, card));
-        }
+        let offset = 0;
+
+        groups.forEach(group => {
+          for(let i = 0; i < group.count; i++){
+            const newRef = push(ref(db, PATH));
+            const card = {
+              number: String(currentMax + offset + 1),
+              year: "",
+              tcg,
+              language,
+              cardName: "",
+              setName: "",
+              cardNumber: "",
+              cardSurface: "Holofoil",
+              status: "Lieferung ausstehend",
+              submissionDate,
+              customerName,
+              customerEmail,
+              category: group.category,
+              grade: "",
+              orderNo,
+              submissionNo: "",
+              note,
+              createdBySubmissionTool: "Ja",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            tasks.push(set(newRef, card));
+            offset++;
+          }
+        });
 
         await Promise.all(tasks);
         els.submissionModal.classList.add("hidden");
@@ -490,14 +535,15 @@
         els.subOrderNo.value = "";
         els.subDate.value = "";
         els.subNote.value = "";
-        showToast(count + " Kartenzeilen angelegt");
+        resetServiceGroups();
+        showToast(totalCount + " Kartenzeilen angelegt");
       }catch(err){
         console.error(err);
         showToast("Submission konnte nicht angelegt werden");
       }
     }
 
-function checkPin(){
+    function checkPin(){
       const enteredPin = String(els.pin.value || "").trim();
       if(enteredPin === PIN){
         localStorage.setItem("ccGradingTrackerUnlocked", "yes");
